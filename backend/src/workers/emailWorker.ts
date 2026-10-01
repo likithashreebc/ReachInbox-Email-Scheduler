@@ -23,7 +23,7 @@ export interface EmailJobData {
 async function processEmailById(emailId: string, userId: string, recipient: string, subject: string, body: string, senderEmail: string) {
   // Idempotency: skip if already sent
   const existing = await prisma.email.findUnique({ where: { id: emailId } });
-  if (!existing || existing.status === "SENT") return;
+  if (!existing || existing.status === "SENT" || existing.status === ("PROCESSING" as any)) return;
 
   // Rate limit check
   const allowed = await checkAndIncrement(senderEmail);

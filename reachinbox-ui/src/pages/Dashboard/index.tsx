@@ -9,7 +9,7 @@ import { ActivityFeed } from '@/components/dashboard/ActivityFeed';
 import { ComposeModal } from '@/components/email/ComposeModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useScheduledEmails, useSentEmails } from '@/hooks/useEmails';
-import { mockActivity, mockStats } from '@/utils/mockData';
+import type { ActivityItem } from '@/types';
 
 function greeting(name: string) {
   const h = new Date().getHours();
@@ -27,26 +27,40 @@ export default function DashboardPage() {
   const failed = sent.filter((e) => e.status === 'FAILED').length;
   const sentCount = sent.filter((e) => e.status === 'SENT').length;
 
+  // Build real activity from actual emails
+  const activity: ActivityItem[] = [
+    ...sent.slice(0, 5).map((e) => ({
+      id: e.id,
+      type: e.status === 'SENT' ? ('sent' as const) : ('failed' as const),
+      message: e.status === 'SENT' ? `Email sent to ${e.recipient}` : `Failed to send to ${e.recipient}`,
+      detail: e.subject,
+      timestamp: (e.sentAt ?? e.scheduledAt) as string,
+    })),
+    ...scheduled.slice(0, 3).map((e) => ({
+      id: e.id,
+      type: 'scheduled' as const,
+      message: `Scheduled email to ${e.recipient}`,
+      detail: e.subject,
+      timestamp: e.scheduledAt as string,
+    })),
+  ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 6);
+
   const stats = [
     {
       label: 'Scheduled',
       value: loadingScheduled ? '—' : scheduled.length,
-      trend: `+${mockStats.scheduledToday} today`,
-      trendUp: true,
       sub: 'Upcoming deliveries',
       icon: <Clock size={14} />,
     },
     {
       label: 'Sent',
       value: loadingSent ? '—' : sentCount,
-      trend: `+${mockStats.sentToday} today`,
-      trendUp: true,
       sub: 'Successfully delivered',
       icon: <CheckCircle2 size={14} />,
     },
     {
       label: 'Queued',
-      value: mockStats.queued,
+      value: loadingScheduled ? '—' : scheduled.length,
       sub: 'Processing now',
       icon: <Loader2 size={14} />,
     },
@@ -137,7 +151,7 @@ export default function DashboardPage() {
               <h3 className="text-sm font-semibold text-[#0a0a0a]">Recent Activity</h3>
               <p className="text-xs text-[#a3a3a3] mt-0.5">Latest system events</p>
             </div>
-            <ActivityFeed items={mockActivity} />
+            <ActivityFeed items={activity} />
           </div>
         </div>
       </main>
