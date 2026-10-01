@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  googleId     String   @unique
+  email        String   @unique
+  name         String
+  avatar       String?
+  slackToken   String?
+  slackChannel String?
+  createdAt    DateTime @default(now())
+  emails       Email[]
+}
+
+model Email {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  recipient     String
+  subject       String
+  body          String
+  senderEmail   String
+  scheduledAt   DateTime
+  sentAt        DateTime?
+  status        EmailStatus @default(SCHEDULED)
+  bullJobId     String?     @unique
+  createdAt     DateTime    @default(now())
+}
+
+enum EmailStatus {
+  SCHEDULED
+  PROCESSING
+  SENT
+  FAILED
+}
