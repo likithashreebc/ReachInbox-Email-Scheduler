@@ -109,8 +109,27 @@ router.get("/search", requireAuth, async (req: Request, res: Response) => {
     const user = req.user as any;
     const q = req.query.q as string;
     if (!q) return res.status(400).json({ error: "Missing query" });
-    const results = await searchEmails(user.id, q);
-    res.json(results);
+
+    // Try Elasticsearch first, fall back to Postgres
+    try {
+      const results = await searchEmails(user.id, q);
+      return res.json(results);
+    } catch {
+      const results = await prisma.email.findMany({
+        where: {
+          userId: user.id,
+          OR: [
+            { recipient: { contains: q, mode: "insensitive" } },
+            { subject: { contains: q, mode: "insensitive" } },
+            { senderEmail: { contains: q, mode: "insensitive" } },
+            { body: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        orderBy: { scheduledAt: "desc" },
+        take: 50,
+      });
+      return res.json(results);
+    }
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
