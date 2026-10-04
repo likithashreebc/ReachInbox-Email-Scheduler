@@ -2,6 +2,8 @@
 
 A production-grade email scheduler with BullMQ, Redis, PostgreSQL, Elasticsearch, Slack notifications, and a Next.js dashboard.
 
+Link : https://reach-inbox-email-scheduler-git-main-likithashreebc.vercel.app/
+
 ---
 
 ## Quick Start
