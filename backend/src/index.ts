@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import session from "express-session";
+import { createClient } from "redis";
+import { RedisStore } from "connect-redis";
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
@@ -28,8 +30,12 @@ app.use(
 );
 app.use(express.json());
 
+const redisClient = createClient({ url: process.env.REDIS_URL });
+redisClient.connect().catch(console.error);
+
 app.use(
   session({
+    store: new RedisStore({ client: redisClient }),
     secret: process.env.SESSION_SECRET || "secret",
     resave: false,
     saveUninitialized: false,
