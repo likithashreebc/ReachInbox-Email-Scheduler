@@ -37,14 +37,22 @@ export function useAuthProvider(): AuthContextValue {
   };
 
   useEffect(() => {
-    // Only fetch once ever — prevent loop
     if (fetchedRef.current) return;
     fetchedRef.current = true;
+
+    // Capture token from URL after OAuth redirect
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem('token', token);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
     fetchUser();
   }, []);
 
   const logout = async () => {
-    try { await authApi.logout(); } catch {}
+    localStorage.removeItem('token');
     setUser(null);
     fetchedRef.current = false;
     window.location.href = '/login';
