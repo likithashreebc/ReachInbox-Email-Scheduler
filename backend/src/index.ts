@@ -18,7 +18,11 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: (origin, cb) => {
+      const allowed = (process.env.FRONTEND_URL || "http://localhost:3000").split(",").map(s => s.trim());
+      if (!origin || allowed.includes(origin)) return cb(null, true);
+      cb(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
@@ -29,7 +33,7 @@ app.use(
     secret: process.env.SESSION_SECRET || "secret",
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, secure: false, sameSite: "lax" },
+    cookie: { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, secure: process.env.NODE_ENV === "production", sameSite: process.env.NODE_ENV === "production" ? "none" : "lax" },
   })
 );
 
